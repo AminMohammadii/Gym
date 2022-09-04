@@ -1,20 +1,40 @@
 <?php
 
+header('Access-Control-Allow-Origin: *');
+header("Content-Type: application/json; charset=UTF-8");
+
 // in this file we try to delete a article from our database and 
 // relation photo about that from server.
 
 // only input is id and using GET method.
 
 // initialize database
-require_once('../dbConnect.php');
+require_once('../../dbConnect.php');
 
 // use this file to delete specefic things that we want.
-require_once('../delete_file.php');
+require_once('../../delete_file.php');
+
+/**
+ * @OA\Delete(path="/******/delete_article.php",
+     * tags={"Admin-Article"},
+     * summary="delete article by id",
+     * @OA\Parameter(
+     *    name="id",
+     *    in="query",
+     *    required=true,
+     *    description="delete the intended workout",
+     *    @OA\Schema(
+     *       type="integer"
+     *    ),
+     * ),
+ * @OA\Response(response="200", description="Success!!!"),
+ * @OA\Response(response="404", description="Not Found!!!")
+ * )
+ */
 
 $tableName = 'article';
-$imageURL = "upload";
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
 
     $tmpID = $_GET['id'] ?? null;
 
@@ -44,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 $conn->exec($sql);
         
                 // use this method from delete_file.php to delete article photo.
-                $deleteResult = delete_file($imageURL,$fileName);
+                $deleteResult = delete_file($fileName);
         
                 echo json_encode(array("message" => "article deleted successfully, ". $deleteResult["deleteMessage"],
                                         "status" => true)); 
@@ -70,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     }
 
 } else {
-    $error_msg = json_encode(array("message" => "you are using wrong request method, please use 'GET' method. " ,
+    $error_msg = json_encode(array("message" => "you are using wrong request method, please use 'DELETE' method. " ,
                                     "status" => false));
     echo $error_msg;
 }

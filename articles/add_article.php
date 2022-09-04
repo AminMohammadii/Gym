@@ -1,22 +1,55 @@
 <?php 
 
+header('Access-Control-Allow-Origin: *');
+header("Content-Type: application/json; charset=UTF-8");
+
 // in this file we add a new article
 // using post method.
 
 
 //initialize database/
-require_once('../dbConnect.php');
+require_once('../../dbConnect.php');
 
 // use this file to upload our article image to server
-require_once('../upload_file.php');
+require_once('../../upload_file.php');
+
+/**
+ * @OA\Post(path="/******/add_article.php",
+    * tags={"Admin-Article"},
+    * summary="Create a new article",
+    * @OA\RequestBody(
+        *    @OA\MediaType(
+        *        mediaType="multipart/form-data",
+        *        @OA\Schema(
+        *            @OA\Property(
+        *                property="title",
+        *                type="string",
+        *            ),
+        *            @OA\Property(
+        *                property="context",
+        *                type="integer",
+        *            ),
+        *            @OA\Property(
+        *                property="file",
+        *                type="file",
+        *            ),
+        *        ),
+        *    ),
+        * ),
+ * @OA\Response(response="200", description="Success!!!"),
+ * @OA\Response(response="404", description="Not Found!!!")
+ * )
+ */
 
 $tableName='article';
-$imageURL = "upload";
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
+    $title = $_POST['title'] ?? null;
+    $context = $_POST['context'] ?? null;
+
     // cause title and context are essential, we check that they aren't empty
-    if(isset($_POST['title'],$_POST['context'])){
+    if($title != null and $context != null){
 
         try {
             $conn = new PDO(sprintf("mysql:host=%s;dbname=%s",HOST,DB_NAME),USERNAME,PASSWORD);
@@ -24,28 +57,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $conn->query("SET CHARACTER SET utf8");
 
 
-            $title = $_POST['title'];
-            $context = $_POST['context'];
-
+            // if we have a file we set file_name value.
             $uploadResult = upload_file($_FILES['file']['name'] ?? null,
-                            $_FILES['file']['tmp_name'] ?? null,
-                            $_FILES['file']['size'] ?? null, $imageURL);
+                                        $_FILES['file']['tmp_name'] ?? null,
+                                        $_FILES['file']['size'] ?? null);
 
             // if we have an image and upload susseccfully to server,
             // upload_file will return true result,
             // then we set fileName value 
             if($uploadResult["status"]){
-                $fileName = $_FILES['file']['name'];
-            }
+                $fileName = $uploadResult["fileName"];
+                }
             else {
                 $fileName = "";
-                $imageURL = "";
             }
 
 
             // command to mysql to create new food
-            $sql = "INSERT INTO $tableName(title,context,file_name,image_url) 
-                VALUES ('$title','$context','$fileName','$imageURL')";
+            $sql = "INSERT INTO $tableName(title,context,file_name) 
+                VALUES ('$title','$context','$fileName')";
             
             $result = $conn->prepare($sql);
             $result->execute();

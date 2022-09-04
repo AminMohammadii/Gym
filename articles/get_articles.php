@@ -1,10 +1,28 @@
 <?php 
 
-// in this file we find article by their id (if id is null or 'all' return all articles)
-// input is an int that contains id, and using get method.
+header('Access-Control-Allow-Origin: *');
+header("Content-Type: application/json; charset=UTF-8");
 
 // initialize databse
-require_once('dbConnect.php');
+require_once('../../dbConnect.php');
+
+/**
+ * @OA\Get(path="/******/get_articles.php",
+     * tags={"Admin-Article"},
+     * summary="Get articles by id (if id is null or 'all' return all articles)",
+     * @OA\Parameter(
+     *    name="id",
+     *    in="query",
+     *    required=false,
+     *    description="Only workouts with this category name will return",
+     *    @OA\Schema(
+     *       type="string"
+     *    ),
+     * ),
+ * @OA\Response(response="200", description="Success!!!"),
+ * @OA\Response(response="404", description="Not Found!!!")
+ * )
+ */
 
 $tableName='article';
 
@@ -37,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 "releaseDate" => $row['release_at'],
                 "context" => $row['context'],
                 "fileName" => $row["file_name"],
-                "imageURL" => $row['image_url']
+                "image_url" => SERVER_IP . FILES_DIR
             ));
         }
         // check that there is a article with that id in database or not.
