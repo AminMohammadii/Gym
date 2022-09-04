@@ -1,98 +1,87 @@
 <?php 
-// this file help us to upload a file to our server with specefic conditions.
 
+require_once("dbConnect.php");
 
+$server = SERVER_IP;
+$directory = FILES_DIR;
 
     // this is where we set the maximum size of fie that allowed to upload.
 $maximum_file_size = 20000000 ;
 
     // this is where we set the format of files that allowed to upload.
-$valid_formats = array("jpg", "jpeg", "png") ;
-
-
-
+$valid_photo_formats = array("jpg", "jpeg", "png");
+$valid__video_formats = array("mp4");
+$valid_formats = array_merge($valid__video_formats,$valid_photo_formats);
 
     // with this method we upload the file to server.
-function upload_file($file_name, $temp_name, $file_size, $dir){
+function upload_file($file_name, $temp_name, $file_size){
+    global $directory,$server;
 
-        //check that file name is not empty pr null
-    if(!($file_name === "" or $file_name === null
-        or $dir === "" or $dir === null)){
+    $fileError = check_file_error($file_name,$file_size);
+    if($fileError != null){
+        return $fileError;
+    }
 
-        $full_path = $dir . "/" . $file_name ; // ex : uploads/mypictue.png
+    $relDirectory = str_ireplace("/******", "../../..", $directory);
 
-            // check that format is allowed or not.
-        if(check_format($file_name )){
+    $fileFormat = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+    $newFileName = gen_uuid() . "." . $fileFormat;
 
-                // check that file is not already exist in server.
-            if(!file_exists($full_path)){
+    $full_path = $relDirectory . $newFileName;
 
-                global $maximum_file_size ;
+    if( move_uploaded_file($temp_name, $full_path) ){
 
-                    // check file size is less than allowed maximum file size.
-                if($file_size < $maximum_file_size ){
-                    
-                        // check that file uploaded sussesscully to server .
-                    if( move_uploaded_file($temp_name, $full_path) ){
-                        // echo json_encode(array("massage" => "file uploaded successfully",
-                        // "status" => true)) ;
-                        return array("message" => "file uploaded successfully",
-                        "status" => true);
-                    }
-                    else {
-                        // $error_msg = json_encode(array("message" => "file did not uploaded successfully",
-                        //                                 "status" => false)) ;
-                        // echo $error_msg ;
-                        return array("message" => "file did not uploaded successfully",
-                        "status" => false);
-                    }
-                }
-                else {
-                    // $error_msg = json_encode(array("message" => "file is too large, upload under 20 MB size",
-                    //                         "status" => false)) ;
-                    // echo $error_msg ;
-
-                    return array("message" => "file did not uploaded successfully",
-                    "status" => false) ;
-                }
-            }
-            else {
-                // $error_msg = json_encode(array("message" => "file already exists, please check directory",
-                //                             "status" => false)) ;
-                // echo $error_msg ;
-                return array("message" => "file already exists, please check directory",
-                "status" => false) ;
-            }
-        }
-        else {
-            // $error_msg = json_encode(array("message" => "format of the file is not accaepable",
-            //                                 "status" => false)) ;
-            // echo $error_msg ;
-            return array("message" => "format of the file is not accaepable",
-            "status" => false) ;
-        }
+        return array("message" => "file uploaded successfully"
+                    ,"fileName" => $newFileName
+                    ,"status" => true);
     }
     else {
-        // $error_msg = json_encode(array("message" => "file_name or directory is not defiend, upload has failed",
-        //                                 "status" => false)) ;
-        // echo $error_msg ;
-        return array("message" => "file_name or directory is not defiend, upload has failed",
-        "status" => false) ;
+        return array("message" => "file did not uploaded successfully",
+        "status" => false);
     }
+
+}    
+
+
+function gen_uuid($data = null) {
+    // Generate 16 bytes (128 bits) of random data or use the data passed into the function.
+    $data = $data ?? random_bytes(16);
+    assert(strlen($data) == 16);
+
+    // Set version to 0100
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+    // Set bits 6-7 to 10
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+
+    // Output the 36 character UUID.
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
+
+
+function check_file_error($fileName, $fileSize){
+    global $maximum_file_size, $valid_formats;
+
+    //check that file name is not empty pr null
+    if($fileName === "" or $fileName === null){
+        return array("message" => "file_name is not defiend, upload has failed",
+                        "status" => false);
+    }
+
+                // check file size is less than allowed maximum file size.
+    if($fileSize > $maximum_file_size ){
+        return array("message" => "file size is too big to upload!(Max:20 MB)",
+        "status" => false);
+    }
+
     // check that file format is in allowed format , if yes return true otherwise return false.
-function check_format($file_name){
-    
-    global $valid_formats ;
-    $file_format = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-    if(in_array($file_format, $valid_formats)){
-        return true ;
+    $fileFormat = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+    if(!(in_array($fileFormat, $valid_formats))){
+        return array("message" => "format of the file is not acceptable",
+        "status" => false);
     }
-    return false ;
+
+    return false;
+
 }
-
-
-
-
 
 ?>
